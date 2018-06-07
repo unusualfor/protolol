@@ -7,9 +7,6 @@ import telepot
 from telepot.delegate import per_chat_id, create_open, pave_event_space, per_inline_from_id
 from telepot.namedtuple import InputTextMessageContent, InlineQueryResultArticle
 
-reload(sys)  
-sys.setdefaultencoding('latin-1')
-
 
 def select_jokes(keyword):
     jokes = []
@@ -67,9 +64,9 @@ class MyChatHandler(telepot.helper.ChatHandler):
 
             else:
                 sent = decide_joke(sentence.lower())
-                report_msg = "Sending: " + str(sent) + "\nTo chat: " + str(receiver) + "\nTrigger from: " + str(
-                    sender) + "\nTrigger content: " + sentence
-                bot.sendMessage(13113271, report_msg)
+                if DEBUG:
+                    report_msg = "Sending: \"" + str(sent).replace("\n","") + "\"\nTo chat: " + str(receiver) + "\nTriggered by: " + str(sender) + "\nRequired content: " + sentence
+                    bot.sendMessage(debug_chat_id, report_msg)
                 bot.sendMessage(chat_id, sent)
 
 
@@ -105,17 +102,26 @@ class InlineHandler(telepot.helper.InlineUserHandler, telepot.helper.AnswererMix
         result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
         print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
 
-        first_name = msg['from']['first_name']
-        report_msg = "Inline query from " + first_name + " (" + str(from_id) + "), choice " + result_id
-        bot.sendMessage(13113271, report_msg)
+        if DEBUG:
+            first_name = msg['from']['first_name']
+            report_msg = "Inline query from " + first_name + " (" + str(from_id) + "), choice " + result_id
+            bot.sendMessage(13113271, report_msg)
 
 
 # MAIN #
 
+DEBUG = False
 TOKEN = None
-if len(sys.argv) != 2:
-    print("Usage: " + sys.argv[0] + " TOKEN")
+if len(sys.argv) < 2:
+    print("Usage: python protolol.py TOKEN [DEBUG debug_chat_id]")
     exit(0)
+elif len(sys.argv) == 4:
+    if str(sys.argv[2]).lower() == "debug":
+        debug_chat_id = sys.argv[3]
+        print("DEBUG mode on, sending debug info to chat_id " + debug_chat_id)
+        DEBUG = True
+else:
+    DEBUG = False
 
 TOKEN = sys.argv[1]
 bot = telepot.DelegatorBot(TOKEN, [
